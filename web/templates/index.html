@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Singapore Harbour Craft AIS Pipeline</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Singapore Harbour Craft AIS Pipeline</h1>
+    <p class="lede">Pulls AIS data, builds Continuous Reports for Flexsim, and estimates eHC energy consumption.</p>
+    <div class="meta">
+      <span class="chip"><strong>{{ archive_count }}</strong> AIS archive file{{ '' if archive_count == 1 else 's' }} on disk</span>
+    </div>
+  </header>
+
+  <main>
+    <h2>Operators</h2>
+    <p class="hint">Click an operator to view details, upload a Trip Report, or run pipeline steps.</p>
+
+    <table class="operators">
+      <thead>
+        <tr>
+          <th>Operator</th>
+          <th>Trip Report</th>
+          <th>MMSIs</th>
+          <th>Continuous Report</th>
+          <th>Energy Report</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for op in operators %}
+        <tr>
+          <td>
+            <strong>{{ op.name }}</strong>
+            <div class="key">{{ op.key }}</div>
+          </td>
+          <td>
+            {% if op.has_trip_report %}<span class="ok">uploaded</span>{% else %}<span class="missing">missing</span>{% endif %}
+          </td>
+          <td>
+            {% if op.n_vessels %}
+              {{ op.n_mmsi_known }} / {{ op.n_vessels }} known
+            {% else %}<span class="missing">—</span>{% endif %}
+          </td>
+          <td>
+            {% if op.has_continuous_report %}<span class="ok">built</span>{% else %}<span class="missing">—</span>{% endif %}
+          </td>
+          <td>
+            {% if op.has_energy_report %}<span class="ok">built</span>{% else %}<span class="missing">—</span>{% endif %}
+          </td>
+          <td><a class="btn" href="{{ url_for('operator_page', op_key=op.key) }}">Open →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <section class="instructions">
+      <h2>How to use this</h2>
+      <ol>
+        <li>Pick an operator above and click <em>Open</em>.</li>
+        <li>Upload that operator's Trip Report (.xlsx).</li>
+        <li>Click <em>Resolve MMSIs</em>. Fill in any missing MMSIs by hand (in <code>vessel_mmsi.csv</code>).</li>
+        <li>Run <code>python 02_record_ais.py --operator &lt;key&gt;</code> in a terminal and let it collect AIS data for as long as you can (days to weeks).</li>
+        <li>Click <em>Build Continuous Report</em>.</li>
+        <li>Click <em>Estimate Energy</em>.</li>
+        <li>Hand the resulting Continuous Report to Estee's Flexsim code.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>Local pipeline. Data stays on this computer.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,230 @@
+/* ===========================================================
+   Singapore Harbour Craft AIS Pipeline - stylesheet
+   Clean, utility-clear design. Functional over flashy.
+   =========================================================== */
+
+:root {
+  --bg:        #fafaf7;
+  --paper:    #ffffff;
+  --ink:       #1a1f2c;
+  --muted:    #6b7280;
+  --border:   #e5e3da;
+  --accent:   #2c5f5d;
+  --accent2:  #b85c38;
+  --ok:       #2c5f5d;
+  --miss:     #b85c38;
+  --code-bg:  #1a1f2c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+header {
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+  padding: 2rem 3rem 1.5rem;
+}
+header a { color: var(--accent); text-decoration: none; }
+header a:hover { text-decoration: underline; }
+
+h1 {
+  font-size: 2.2rem;
+  margin: 0.2rem 0 0.2rem;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+h2 {
+  font-size: 1.4rem;
+  margin: 2rem 0 0.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.lede { color: var(--muted); margin: 0.4rem 0 1rem; font-size: 1.05rem; }
+.hint { color: var(--muted); font-size: 0.95rem; margin-top: -0.4rem; }
+
+.meta { margin-top: 0.6rem; }
+
+.chip {
+  display: inline-block;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-right: 0.3rem;
+}
+
+main {
+  padding: 1rem 3rem 3rem;
+  max-width: 1200px;
+}
+
+footer {
+  padding: 2rem 3rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 3rem;
+}
+
+/* === Operators table === */
+table.operators {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+}
+table.operators th, table.operators td {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+table.operators th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--bg);
+}
+table.operators tr:last-child td { border-bottom: none; }
+table.operators tr:hover { background: #fbfaf3; }
+.key {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+/* === Status indicators === */
+.ok      { color: var(--ok); font-weight: 600; }
+.missing { color: var(--miss); }
+
+/* === Buttons === */
+.btn {
+  display: inline-block;
+  background: var(--ink);
+  color: white;
+  border: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--accent); }
+.btn.light {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.btn.light:hover { background: var(--accent); color: white; }
+
+/* === Sections (operator detail page) === */
+section {
+  background: var(--paper);
+  padding: 1.5rem 1.8rem;
+  margin-top: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* === Data tables (vessel mmsi preview) === */
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.92rem;
+}
+table.data th, table.data td {
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+table.data th {
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* === Energy summary cards === */
+.summary {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.summary > div {
+  flex: 1 1 130px;
+  padding: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  text-align: center;
+}
+.summary .num {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+.summary .lbl {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* === Output console === */
+pre#output {
+  background: var(--code-bg);
+  color: #d6e3df;
+  padding: 1rem 1.2rem;
+  border-radius: 4px;
+  overflow: auto;
+  max-height: 400px;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* === Forms === */
+form input[type="file"] {
+  font-family: inherit;
+  margin-right: 0.6rem;
+}
+
+/* === Instructions list === */
+.instructions {
+  margin-top: 2.5rem;
+  padding: 1.5rem 2rem;
+  background: var(--paper);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+}
+.instructions ol { padding-left: 1.2rem; }
+.instructions li { margin-bottom: 0.4rem; }
+.instructions code {
+  background: var(--bg);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.88rem;
+}

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ op.name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+  <header>
+    <p><a href="{{ url_for('index') }}">← All operators</a></p>
+    <h1>{{ op.name }}</h1>
+    <div class="meta">
+      <span class="chip">{{ op.key }}</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============================================================ -->
+    <!-- Step 1: upload trip report                                    -->
+    <!-- ============================================================ -->
+    <section>
+      <h2>1. Trip Report</h2>
+      {% if op.has_trip_report %}
+        <p><span class="ok">Uploaded.</span> Re-uploading replaces the existing file.</p>
+      {% else %}
+        <p><span class="missing">No Trip Report uploaded yet.</span></p>
+      {% endif %}
+      <form method="POST" action="{{ url_for('upload_trip_report', op_key=op.key) }}" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
+        <button type="submit" class="btn">Upload</button>
+      </form>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Step 2: MMSI lookup                                           -->
+    <!-- ============================================================ -->
+    <section>
+      <h2>2. MMSI Lookup</h2>
+      <p>Maps each unique vessel name in the Trip Report to its AIS MMSI number.</p>
+      <button class="btn" onclick="runStep('resolve_mmsi')">Resolve MMSIs</button>
+      {% if op.has_mmsi_lookup %}
+        <a class="btn light" href="{{ url_for('download', op_key=op.key, which='mmsi') }}">Download CSV</a>
+      {% endif %}
+
+      {% if mmsi_preview %}
+      <table class="data">
+        <thead><tr><th>Vessel</th><th>MMSI</th><th>Notes</th></tr></thead>
+        <tbody>
+          {% for row in mmsi_preview %}
+          <tr>
+            <td>{{ row.vessel_name }}</td>
+            <td>{{ row.mmsi if row.mmsi else '—' }}</td>
+            <td>{{ row.notes }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Step 3: build continuous report                               -->
+    <!-- ============================================================ -->
+    <section>
+      <h2>3. Continuous Report</h2>
+      <p>Combines Trip Report + recorded AIS to produce a Continuous Report in SeaCabbie format. Run this AFTER you've collected enough AIS data.</p>
+      <button class="btn" onclick="runStep('build_report')">Build Continuous Report</button>
+      {% if op.has_continuous_report %}
+        <a class="btn light" href="{{ url_for('download', op_key=op.key, which='continuous') }}">Download XLSX</a>
+      {% endif %}
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Step 4: energy estimate                                       -->
+    <!-- ============================================================ -->
+    <section>
+      <h2>4. Energy Consumption</h2>
+      <p>Estimates the kWh each trip would use on a hypothetical electric harbour craft.</p>
+      <button class="btn" onclick="runStep('energy')">Estimate Energy</button>
+      {% if op.has_energy_report %}
+        <a class="btn light" href="{{ url_for('download', op_key=op.key, which='energy') }}">Download XLSX</a>
+      {% endif %}
+
+      {% if energy_summary %}
+      <div class="summary">
+        <div><span class="num">{{ energy_summary.n_trips }}</span><span class="lbl">trips</span></div>
+        <div><span class="num">{{ energy_summary.total_kWh }}</span><span class="lbl">total kWh</span></div>
+        <div><span class="num">{{ energy_summary.avg_kWh }}</span><span class="lbl">avg kWh / trip</span></div>
+        <div><span class="num">{{ energy_summary.max_pct_battery }}%</span><span class="lbl">peak battery use</span></div>
+        <div><span class="num">{{ energy_summary.total_km }}</span><span class="lbl">total km</span></div>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Step 4.5: verify the file is Flexsim-compatible               -->
+    <!-- ============================================================ -->
+    <section>
+      <h2>5. Flexsim Compatibility Check</h2>
+      <p>Runs the Continuous Report through the same parsing logic as Estee's Flexsim code, to confirm the file will load cleanly. Run this before handing the file off.</p>
+      <button class="btn" onclick="runStep('verify_compat')">Verify Flexsim Compatibility</button>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Map                                                           -->
+    <!-- ============================================================ -->
+    <section>
+      <h2>6. Vessel Routes</h2>
+      <p>Plot of all recorded positions for this operator's vessels (loaded from the Continuous Report).</p>
+      <div id="map" style="height: 500px; border: 1px solid #ddd;"></div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- Output area for command results                               -->
+    <!-- ============================================================ -->
+    <section>
+      <h2>Command Output</h2>
+      <pre id="output">(nothing run yet)</pre>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="{{ url_for('index') }}">← All operators</a></p>
+  </footer>
+
+  <!-- Leaflet for the map -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Initialise the Singapore-centred map
+    const map = L.map('map').setView([1.30, 103.80], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'OpenStreetMap'
+    }).addTo(map);
+
+    // Load vessel routes from the server
+    fetch('{{ url_for("map_data", op_key=op.key) }}')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.vessels.length) return;
+        const colours = ['#c8553d', '#588b8b', '#f28f3b', '#2f4858',
+                         '#8e7dbe', '#558c8c', '#a64253'];
+        data.vessels.forEach((v, i) => {
+          const colour = colours[i % colours.length];
+          const line = L.polyline(v.coords, { color: colour, weight: 2 }).addTo(map);
+          line.bindTooltip(v.name);
+        });
+      });
+
+    // Run a pipeline step from a button click and show output
+    function runStep(step) {
+      const out = document.getElementById('output');
+      out.textContent = 'Running...';
+      fetch(`/run/${step}/{{ op.key }}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          out.textContent = data.stdout + (data.stderr ? '\n\n[stderr]\n' + data.stderr : '');
+          if (data.ok) {
+            // Reload after 1 second to refresh the status indicators
+            setTimeout(() => location.reload(), 1500);
+          }
+        })
+        .catch(err => { out.textContent = 'Error: ' + err; });
+    }
+  </script>
+</body>
+</html>
